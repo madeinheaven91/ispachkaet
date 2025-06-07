@@ -1,9 +1,12 @@
 # испачкает
 
 **"испачкает"** - российская музыкальная группа из Казани, созданная Даньком Испачканым. Играет в жанрах рок, русский шансон и данс макабр. Дебютный альбом "испачкает" был выпущен 6 июня 2025 года под лейблом Грязный Костик Records.
-![испачкает](assets/first.png)
-![испачкает II](assets/second.png)
-![испачкает III - трилогия](assets/third.png)
+
+<img style="display: inline; width: 30%;" alt="испачкает" src="assets/first.png"/>
+<img style="display: inline; width: 30%;" alt="испачкает 2" src="assets/second.png"/>
+<img style="display: inline; width: 30%;" alt="испачкает 3" src="assets/third.png"/>
+
+## Использование 
 
 ## Использование
 
