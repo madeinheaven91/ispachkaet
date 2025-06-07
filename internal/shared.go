@@ -1,32 +1,38 @@
 package internal
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
+	"log"
+	"math"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/golang/freetype"
 )
 
 func HexStringToRGBA(input string) *color.RGBA {
 	if len(input) != 6 {
-		panic(fmt.Sprintf("expected input length 6, got %d", len(input)))
+		log.Fatalf("Couldn't parse hex color %s.\n", input)
+		os.Exit(1)
 	}
 
 	r, err := strconv.ParseUint(input[0:2], 16, 16)
 	if err != nil {
-		panic("couldn't parse hex color")
+		log.Fatalf("Couldn't parse hex color %s.\n%q", input, err)
+		os.Exit(1)
 	}
 	g, err := strconv.ParseUint(input[2:4], 16, 16)
 	if err != nil {
-		panic("couldn't parse hex color")
+		log.Fatalf("Couldn't parse hex color %s.\n%q", input, err)
+		os.Exit(1)
 	}
 	b, err := strconv.ParseUint(input[4:6], 16, 16)
 	if err != nil {
-		panic("couldn't parse hex color")
+		log.Fatalf("Couldn't parse hex color %s.\n%q", input, err)
+		os.Exit(1)
 	}
 	res := color.RGBA{
 		uint8(r), uint8(g), uint8(b), 0xff,
@@ -52,11 +58,13 @@ func InitRGBA(color color.RGBA) *image.RGBA {
 func InitContext(img *image.RGBA, fg *image.Uniform) *freetype.Context {
 	bytes, err := os.ReadFile("assets/times.ttf")
 	if err != nil {
-		panic(err)
+		log.Fatalf("Couldn't read times.ttf.\n%q", err)
+		os.Exit(1)
 	}
 	font, err := freetype.ParseFont(bytes)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Couldn't parse times.ttf.\n%q", err)
+		os.Exit(1)
 	}
 	c := freetype.NewContext()
 	c.SetDPI(240)
@@ -69,9 +77,45 @@ func InitContext(img *image.RGBA, fg *image.Uniform) *freetype.Context {
 }
 
 func AddLabel(c *freetype.Context, x, y int, label string) {
-	_, err := c.DrawString(label, freetype.Pt(x, y))
-	if err != nil {
-		fmt.Println(err)
+	substrings := strings.SplitSeq(label, `\n`)
+	for s := range substrings {
+		_, err := c.DrawString(s, freetype.Pt(x, y))
+		if err != nil {
+			log.Printf("Couldn't draw label %s at (%d, %d). %q", label, x, y, err)
+		}
+		y += int(math.Floor((float64(c.PointToFixed(16)>>6) * 1.5)))
+	}
+}
+
+func AddLabelFromEnd(c *freetype.Context, x, y int, label string) {
+	substrings := strings.SplitSeq(label, `\n`)
+	for s := range substrings {
+		// FIXME: костыль
+		advanced, err := c.DrawString(s, freetype.Pt(0, -100))
+		if err != nil {
+			log.Printf("Couldn't draw label %s at (%d, %d). %q", s, x, y, err)
+		}
+		_, err = c.DrawString(s, freetype.Pt(x-advanced.X.Round(), y))
+		if err != nil {
+			log.Printf("Couldn't draw label %s at (%d, %d). %q", label, x, y, err)
+		}
+		y += int(math.Floor((float64(c.PointToFixed(16)>>6) * 1.5)))
+	}
+}
+
+func AddLabelCentered(c *freetype.Context, x, y int, label string) {
+	substrings := strings.SplitSeq(label, `\n`)
+	for s := range substrings {
+		// FIXME: костыль
+		advanced, err := c.DrawString(s, freetype.Pt(0, -100))
+		if err != nil {
+			log.Printf("Couldn't draw label %s at (%d, %d). %q", s, x, y, err)
+		}
+		_, err = c.DrawString(s, freetype.Pt(x-advanced.X.Round()/2, y))
+		if err != nil {
+			log.Printf("Couldn't draw label %s at (%d, %d). %q", label, x, y, err)
+		}
+		y += int(math.Floor((float64(c.PointToFixed(16)>>6) * 1.5)))
 	}
 }
 
@@ -90,7 +134,7 @@ func AddPmrc(img *image.RGBA, padding int) {
 	height := img.Bounds().Max.Y
 	pmrc, err := GetImageFromFilePath("assets/pmrc.jpg")
 	if err != nil {
-		panic(err)
+		log.Printf("Couldn't open image %s. %q", "assets/pmrc.jpg", err)
 	}
 	pmrcW := pmrc.Bounds().Max.X
 	pmrcH := pmrc.Bounds().Max.Y
